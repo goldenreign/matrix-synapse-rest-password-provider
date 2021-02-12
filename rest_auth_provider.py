@@ -49,7 +49,7 @@ class RestAuthProvider(object):
         r = requests.get(urljoin(self.endpoint, '_matrix/identity/api/v1/lookup'), params=query)
         r.raise_for_status()
         r = r.json()
-        if not r["mxid"]:
+        if "mxid" not in r:
             logger.info("No association is known for " + medium + " " + address)
             return None, None
         mxid = r["mxid"]
