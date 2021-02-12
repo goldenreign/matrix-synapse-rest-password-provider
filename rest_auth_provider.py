@@ -23,6 +23,7 @@ import logging
 import requests
 import json
 import time
+from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,22 @@ class RestAuthProvider(object):
 
         logger.info('Endpoint: %s', self.endpoint)
         logger.info('Enforce lowercase username during registration: %s', self.regLower)
+
+    async def check_3pid_auth(self, medium, address, password):
+        logger.info("Got 3PID auth check for " + medium + " " + address)
+        query = {'medium': medium, 'address': address}
+        r = requests.get(urljoin(self.endpoint, '_matrix/identity/api/v1/lookup'), params=query)
+        r.raise_for_status()
+        r = r.json()
+        if not r["mxid"]:
+            logger.info("No association is known for " + medium + " " + address)
+            return None, None
+        mxid = r["mxid"]
+        auth = await self.check_password(mxid, password)
+        if not auth:
+            logger.info("User " + mxid + " is not authenticated")
+            return None, None
+        return mxid, None
 
     async def check_password(self, user_id, password):
         logger.info("Got password check for " + user_id)
